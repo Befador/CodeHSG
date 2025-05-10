@@ -94,14 +94,36 @@ def start_snake() -> None:
     except Exception:
         print(f"{YELLOW}Error launching Snake:{RESET}")
         traceback.print_exc()
-        _launch_placeholder("Snake")
+        input("\nPress Enter to return to the main menu...")
+        return
+
+# ── Hangman launcher ──────────────────────────────────────────────────────────
+def start_hangman() -> None:
+    """Import and start Hangman (hangman.py)."""
+    script_dir = Path(__file__).resolve().parent
+    script_path = str(script_dir)
+    if script_path in sys.path:
+        sys.path.remove(script_path)
+    sys.path.insert(0, script_path)
+
+    if "hangman" in sys.modules:
+        del sys.modules["hangman"]
+    try:
+        hangman_mod = importlib.import_module("hangman")
+        importlib.reload(hangman_mod)
+        getattr(hangman_mod, "main")()
+    except Exception:
+        print(f"{YELLOW}Error launching Hangman:{RESET}")
+        traceback.print_exc()
+        input("\nPress Enter to return to the main menu...")
+        return
 
 # ── Menu configuration ────────────────────────────────────────────────────────
 MENU_ITEMS: Dict[str, Callable[[], None]] = {
     "Tic‑Tac‑Toe": start_tic_tac_toe,
     "Snake":       start_snake,
     "Minesweeper": lambda: _launch_placeholder("Minesweeper"),
-    "Hangman":     lambda: _launch_placeholder("Hangman"),
+    "Hangman":     start_hangman,
 }
 
 # ── Core drawing & loop ────────────────────────────────────────────────────────
