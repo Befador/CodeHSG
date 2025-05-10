@@ -37,6 +37,14 @@ import time
 import random
 import json
 
+# ── Opening-book of optimal moves ─────────────────────────────────────────
+BOOK = {}
+try:
+    from pathlib import Path
+    BOOK = json.load(Path(__file__).with_name("tictactoe_book.json").open())
+except (FileNotFoundError, json.JSONDecodeError):
+    print("Warning: opening‑book not found; AI will use Minimax only.")
+
 # Constants
 
 # AI randomness probability
@@ -433,6 +441,13 @@ def game_loop(single_mode):
     # Wait for user input before returning to the menu
     input("Enter to menu...")
 
+def main() -> None:
+    """
+    Zero‑argument entrypoint so the arcade launcher can start the game.
+    Launches the Tic‑Tac‑Toe menu.
+    """
+    main_menu()
+
 # Main menu function
 def main_menu():
     """
@@ -466,4 +481,4 @@ def main_menu():
 
 # Entry point of the program
 if __name__ == "__main__":
-    main_menu()
+    main()
