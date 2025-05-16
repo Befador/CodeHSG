@@ -130,3 +130,15 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# print a smiley
+def print_smiley():
+    print("  ^_^  ")
+    print(" (o o) ")
+    print("  \\_/  ")
+    print("   |   ")
+    print("  / \\  ")
+    print(" /   \\ ")
+    print("/     \\")
+
+    
