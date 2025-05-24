@@ -1,10 +1,18 @@
-#!/usr/bin/env python3
+
 """
-Retro‑arcade style main menu for CodeHSG games collection.
-Feel free to customise colours, ASCII logo, and menu items.
+DOCUMENTATION
+
+So this script is the main menu for a collection of terminal games, including Tic‑Tac‑Toe, Snake, Minesweeper (To be finished), and Hangman.
+
+The whole script is designed to be run in a terminal, and it dynamically imports the game modules when the user selects a game.
+This enables us to create separate game files while keeping the main menu clean and organized. Furthermore, it allows for easy addition of new games in the future.
+
+The theme we went for is a retro terminal style, reminiscent of classic text-based games, with a focus on simplicity and ease of use.
+Also, we found it fun to use ASCII art for the logo and menu items, giving it a nostalgic feel.
 """
 
-import os
+# Import necessary modules
+import os 
 import sys
 import time
 from pathlib import Path
@@ -12,14 +20,15 @@ from typing import Dict, Callable
 import importlib
 import traceback
 
-# ── ANSI escape sequences for style ────────────────────────────────────────────
+# Set terminal styles for output
 RESET  = "\033[0m"
 BOLD   = "\033[1m"
 GREEN  = "\033[32m"
 YELLOW = "\033[33m"
 CYAN   = "\033[36m"
 
-ASCII_LOGO = f"""{GREEN}{BOLD}
+# Define the ASCII-style logo for the main menu
+ASCII_LOGO = f"""{GREEN}{BOLD} 
 ╔═════════════════════════════════════════════════════════╗
 ║                                                         ║
 ║   █████╗  ██████╗   ██████╗  █████╗  ██████╗  ███████╗  ║                                               
@@ -34,31 +43,36 @@ ASCII_LOGO = f"""{GREEN}{BOLD}
 """
 
 
-# ── Utility functions ──────────────────────────────────────────────────────────
-def clear() -> None:
+# now the functions that will be used to clear the terminal, pause for a moment, and launch the games
+def clear() -> None: # 
     """Clear the terminal screen."""
-    os.system("cls" if os.name == "nt" else "clear")
+    os.system("cls" if os.name == "nt" else "clear") 
 
+# This function is used to pause the execution for a specified number of seconds, allowing the user to see transition text before proceeding.
 def pause(seconds: float = 1.2) -> None:
     """Sleep a moment so the user sees transition text."""
     time.sleep(seconds)
 
+# This function is a placeholder for launching games that are not yet implemented.
+# It clears the screen, prints a message indicating the game is launching, and then shows a "Coming soon!" message.
 def _launch_placeholder(game_name: str) -> None:
     """Temporary stub for games not yet wired up."""
     clear()
     print(f"{YELLOW}{BOLD}Launching {game_name} ...{RESET}")
     pause()
     print(f"{CYAN}Coming soon!{RESET}")
-    input("\nPress Enter to return to the main menu...")
+    input("\nPress Enter to return to the main menu...") # Wait for user input before returning to the main menu
 
+
+# ── Tic‑Tac‑Toe launcher ─────────────────────────────────────────────────────
 def start_tic_tac_toe() -> None:
     """Import and start Tic‑Tac‑Toe. Tries several common entrypoints before falling back to a placeholder."""
-    script_dir = Path(__file__).resolve().parent
+    script_dir = Path(__file__).resolve().parent # Get the directory of the current script. 
     if str(script_dir) not in sys.path:
         sys.path.insert(0, str(script_dir))
 
     try:
-        ttt = importlib.import_module("tic_tac_toe")
+        ttt = importlib.import_module("tic_tac_toe") 
     except ModuleNotFoundError:
         _launch_placeholder("Tic‑Tac‑Toe (module not found)")
         return
@@ -73,7 +87,7 @@ def start_tic_tac_toe() -> None:
                 print(f"{YELLOW}Error while running {attr}(): {exc}{RESET}")
                 break
 
-    _launch_placeholder("Tic‑Tac‑Toe (no usable entrypoint)")
+    _launch_placeholder("Tic‑Tac‑Toe (no usable entrypoint)") 
 
 # ── Snake launcher ────────────────────────────────────────────────────────
 def start_snake() -> None:
@@ -120,6 +134,7 @@ def start_hangman() -> None:
         return
 
 # ── Menu configuration ────────────────────────────────────────────────────────
+ # Mapping of menu item names to their corresponding launcher functions
 MENU_ITEMS: Dict[str, Callable[[], None]] = {
     "Tic‑Tac‑Toe": start_tic_tac_toe,
     "Snake":       start_snake,
@@ -129,6 +144,9 @@ MENU_ITEMS: Dict[str, Callable[[], None]] = {
 
 # ── Core drawing & loop ────────────────────────────────────────────────────────
 def draw_menu() -> None:
+    """
+    Clear the screen and display the ASCII logo followed by the numbered game menu items.
+    """
     clear()
     print(ASCII_LOGO)
     for idx, title in enumerate(MENU_ITEMS, 1):
@@ -137,6 +155,9 @@ def draw_menu() -> None:
     print(f"   0. Exit\n")
 
 def main() -> None:
+    """
+    Main application loop: draw the menu, process user input to launch games or exit.
+    """
     while True:
         draw_menu()
         choice = input(BOLD + "Select a game (0‑{}): ".format(len(MENU_ITEMS)) + RESET)
@@ -151,5 +172,5 @@ def main() -> None:
         if 1 <= idx <= len(MENU_ITEMS):
             list(MENU_ITEMS.values())[idx-1]()
 
-if __name__ == "__main__":
+if __name__ == "__main__": # This ensures the main function is called only when the script is run directly, not when imported.
     main()
