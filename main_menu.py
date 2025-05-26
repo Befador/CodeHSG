@@ -133,6 +133,27 @@ def start_hangman() -> None:
         input("\nPress Enter to return to the main menu...")
         return
 
+# ── Rock, Paper, Scissors launcher ──────────────────────────────────────────────────────────
+def start_rock_paper_scissors() -> None:
+    """Import and start Rock Paper Scissors (rock_paper_scissors.py)."""
+    script_dir = Path(__file__).resolve().parent
+    script_path = str(script_dir)
+    if script_path in sys.path:
+        sys.path.remove(script_path)
+    sys.path.insert(0, script_path)
+
+    if "rock_paper_scissors" in sys.modules:
+        del sys.modules["rock_paper_scissors"]
+    try:
+        rps_mod = importlib.import_module("rock_paper_scissors")
+        importlib.reload(rps_mod)
+        getattr(rps_mod, "main")()
+    except Exception:
+        print(f"{YELLOW}Error launching Rock Paper Scissors:{RESET}")
+        traceback.print_exc()
+        input("\nPress Enter to return to the main menu...")
+        return
+
 # ── Menu configuration ────────────────────────────────────────────────────────
  # Mapping of menu item names to their corresponding launcher functions
 MENU_ITEMS: Dict[str, Callable[[], None]] = {
@@ -140,6 +161,7 @@ MENU_ITEMS: Dict[str, Callable[[], None]] = {
     "Snake":       start_snake,
     "Minesweeper": lambda: _launch_placeholder("Minesweeper"),
     "Hangman":     start_hangman,
+    "Rock Paper Scissors": start_rock_paper_scissors,
 }
 
 # ── Core drawing & loop ────────────────────────────────────────────────────────
