@@ -156,6 +156,34 @@ def start_rock_paper_scissors() -> None:
         input("\nPress Enter to return to the main menu...")
         return
 
+def start_mastermind() -> None:
+    """Import and start Mastermind (mastermind.py)."""
+    # 1) clear away the menu
+    clear()
+
+    # 2) make sure our folder is on sys.path
+    script_dir  = Path(__file__).resolve().parent
+    script_path = str(script_dir)
+    if script_path in sys.path:
+        sys.path.remove(script_path)
+    sys.path.insert(0, script_path)
+
+    # 3) reload & run
+    if "mastermind" in sys.modules:
+        del sys.modules["mastermind"]
+    try:
+        import mastermind
+        importlib.reload(mastermind)
+        mastermind.main()
+    except Exception:
+        print(f"{YELLOW}Error launching Mastermind:{RESET}")
+        traceback.print_exc()
+        input("\nPress Enter to return to the main menu…")
+        return
+
+    # 4) once the user hits “Enter” in the game, clear again
+    clear()
+
 # ── Menu configuration ────────────────────────────────────────────────────────
  # Mapping of menu item names to their corresponding launcher functions
 MENU_ITEMS: Dict[str, Callable[[], None]] = {
@@ -164,6 +192,7 @@ MENU_ITEMS: Dict[str, Callable[[], None]] = {
     "Minesweeper": lambda: _launch_placeholder("Minesweeper"),
     "Hangman":     start_hangman,
     "Rock Paper Scissors": start_rock_paper_scissors,
+    "Mastermind":           start_mastermind,
 }
 
 # ── Core drawing & loop ────────────────────────────────────────────────────────
