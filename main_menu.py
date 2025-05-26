@@ -136,6 +136,7 @@ def start_hangman() -> None:
 # ── Rock, Paper, Scissors launcher ──────────────────────────────────────────────────────────
 def start_rock_paper_scissors() -> None:
     """Import and start Rock Paper Scissors (rock_paper_scissors.py)."""
+    import curses
     script_dir = Path(__file__).resolve().parent
     script_path = str(script_dir)
     if script_path in sys.path:
@@ -147,7 +148,8 @@ def start_rock_paper_scissors() -> None:
     try:
         rps_mod = importlib.import_module("rock_paper_scissors")
         importlib.reload(rps_mod)
-        getattr(rps_mod, "main")()
+        # Instead of calling main() directly, use curses.wrapper to run it properly
+        curses.wrapper(rps_mod.main)
     except Exception:
         print(f"{YELLOW}Error launching Rock Paper Scissors:{RESET}")
         traceback.print_exc()

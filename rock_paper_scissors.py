@@ -1,27 +1,18 @@
+#!/usr/bin/env python3
 import curses
 import random
 import time
 
-# Color constants matching your Snake game style
-RESET  = "\033[0m"
-BOLD   = "\033[1m"
-GREEN  = "\033[32m"
-YELLOW = "\033[33m"
-CYAN   = "\033[36m"
-RED    = "\033[31m"
-MAGENTA = "\033[35m"
-WHITE  = "\033[37m"
+# ── CONFIGURATION ─────────────────────────────────────────────────────────────
 
-# Snake-style boxed ASCII title for "ROCK PAPER SCISSORS"
 ASCII_TITLE = [
     "╔══════════════════════════════════════════════════════════╗",
     "║                                                          ║",
-    "║          R  O  C  K     P  A  P  E  R     S  C  I  S  S  O  R  S          ║",
+    "║  R  O  C  K     P  A  P  E  R    S  C  I  S  S  O  R  S  ║",
     "║                                                          ║",
     "╚══════════════════════════════════════════════════════════╝",
 ]
 
-# Finger ASCII art for rock, paper, scissors
 ASCII_ART = {
     "rock": [
         "    _______",
@@ -49,135 +40,195 @@ ASCII_ART = {
     ],
 }
 
-CHOICES = ["rock", "paper", "scissors"]
+CHOICES = ["rock","paper","scissors"]
 
-def print_centered(stdscr, y, text, color_pair=0, bold=False):
+# ── DRAWING HELPERS ────────────────────────────────────────────────────────────
+
+def print_centered(stdscr, y, text, color_pair, bold=False):
     h, w = stdscr.getmaxyx()
-    x = (w - len(text)) // 2
+    x = max(0, (w - len(text)) // 2)
     attr = curses.color_pair(color_pair)
     if bold:
         attr |= curses.A_BOLD
     stdscr.addstr(y, x, text, attr)
 
-def print_ascii_art(stdscr, start_y, art_lines, color_pair=0):
+def print_ascii_art(stdscr, start_y, art_lines, color_pair):
     h, w = stdscr.getmaxyx()
     for i, line in enumerate(art_lines):
-        x = (w - len(line)) // 2
+        x = max(0, (w - len(line)) // 2)
         stdscr.addstr(start_y + i, x, line, curses.color_pair(color_pair))
 
 def print_title(stdscr):
     h, w = stdscr.getmaxyx()
     for i, line in enumerate(ASCII_TITLE):
-        x = (w - len(line)) // 2
-        stdscr.addstr(i + 1, x, line, curses.color_pair(2) | curses.A_BOLD)
+        x = max(0, (w - len(line)) // 2)
+        stdscr.addstr(i, x, line, curses.color_pair(2)|curses.A_BOLD)
 
-def countdown(stdscr):
+def print_score(stdscr, name, user_score, comp_score):
     h, w = stdscr.getmaxyx()
-    for i in range(3, 0, -1):
-        stdscr.clear()
-        print_title(stdscr)
-        print_centered(stdscr, h // 2, f"{i}...", color_pair=3, bold=True)
+    score_text = f"{name}: {user_score}   AI: {comp_score}"
+    # place on line 1, flush right with a 2-char margin
+    y = 1
+    x = max(0, w - len(score_text) - 2)
+    stdscr.addstr(y, x, score_text, curses.color_pair(5)|curses.A_BOLD)
+
+# ── INPUT HELPERS ──────────────────────────────────────────────────────────────
+
+def prompt_name(stdscr, row):
+    prompt = "Enter your name: "
+    curses.echo()
+    print_centered(stdscr, row, prompt, 5, bold=True)
+    stdscr.refresh()
+    h, w = stdscr.getmaxyx()
+    col = (w - len(prompt)) // 2 + len(prompt)
+    name = stdscr.getstr(row, col, 20).decode().strip()
+    curses.noecho()
+    return name or "Player"
+
+def get_user_choice(stdscr, row, name):
+    prompt = f"{name}, choose Rock (r), Paper (p) or Scissors (s): "
+    while True:
+        stdscr.move(row, 0)
+        stdscr.clrtoeol()
+        print_centered(stdscr, row, prompt, 5)
+        stdscr.refresh()
+        c = stdscr.getch()
+        if c in (ord('r'),ord('R')): return "rock"
+        if c in (ord('p'),ord('P')): return "paper"
+        if c in (ord('s'),ord('S')): return "scissors"
+
+def countdown(stdscr, row):
+    for i in (3,2,1):
+        stdscr.move(row, 0)
+        stdscr.clrtoeol()
+        print_centered(stdscr, row, f"{i}...", 3, bold=True)
         stdscr.refresh()
         time.sleep(1)
 
-def get_user_choice(stdscr):
-    prompt = "Choose Rock (r), Paper (p), or Scissors (s): "
-    h, w = stdscr.getmaxyx()
-    while True:
-        stdscr.clear()
-        print_title(stdscr)
-        print_centered(stdscr, h // 2 - 2, "Rock Paper Scissors", color_pair=5, bold=True)
-        print_centered(stdscr, h // 2, prompt, color_pair=5)
-        stdscr.refresh()
-        c = stdscr.getch()
-        if c in (ord('r'), ord('R')):
-            return "rock"
-        elif c in (ord('p'), ord('P')):
-            return "paper"
-        elif c in (ord('s'), ord('S')):
-            return "scissors"
+# ── GAME LOGIC ────────────────────────────────────────────────────────────────
 
 def decide_winner(user, comp):
     if user == comp:
         return "tie"
-    wins = {"rock": "scissors", "scissors": "paper", "paper": "rock"}
+    wins = {"rock":"scissors","scissors":"paper","paper":"rock"}
     return "user" if wins[user] == comp else "computer"
 
 def main(stdscr):
+    # —— Initialize curses & colors —— 
     curses.curs_set(0)
+    curses.noecho()
+    curses.cbreak()
+    stdscr.keypad(True)
     curses.start_color()
     curses.use_default_colors()
-    # Define color pairs matching your Snake game
-    curses.init_pair(1, curses.COLOR_RED, -1)      # Computer win messages
-    curses.init_pair(2, curses.COLOR_GREEN, -1)    # Title, user win messages
-    curses.init_pair(3, curses.COLOR_YELLOW, -1)   # Countdown, tie messages
-    curses.init_pair(4, curses.COLOR_CYAN, -1)     # User ASCII art
-    curses.init_pair(5, curses.COLOR_MAGENTA, -1)  # Prompts & computer ASCII art
+    curses.init_pair(1, curses.COLOR_RED,   -1)  # computer wins
+    curses.init_pair(2, curses.COLOR_GREEN, -1)  # title & user wins
+    curses.init_pair(3, curses.COLOR_YELLOW,-1)  # countdown & tie
+    curses.init_pair(4, curses.COLOR_CYAN,  -1)  # user art
+    curses.init_pair(5, curses.COLOR_MAGENTA,-1) # prompts & comp art
 
-    rounds = 5
-    user_score, comp_score = 0, 0
+    # heights
+    title_h = len(ASCII_TITLE)
+    art_h   = len(ASCII_ART["rock"])
 
-    for round_num in range(1, rounds + 1):
+    # 1) Prompt for name
+    stdscr.clear()
+    print_title(stdscr)
+    print_score(stdscr, "…", 0, 0)           # blank score until we know name
+    name = prompt_name(stdscr, title_h + 1)
+    time.sleep(0.3)
+
+    # 2) Play best-of-5 (first to 3)
+    user_score = comp_score = 0
+    rounds     = 5
+    needed     = rounds//2 + 1
+
+    for rnd in range(1, rounds+1):
         stdscr.clear()
         print_title(stdscr)
-        print_centered(stdscr, len(ASCII_TITLE) + 2, f"Round {round_num} of {rounds}", color_pair=3, bold=True)
-        stdscr.refresh()
+        print_score(stdscr, name, user_score, comp_score)
 
-        user_choice = get_user_choice(stdscr)
+        # Round header
+        print_centered(stdscr, title_h + 1,
+                       f"Round {rnd} of {rounds}", 3, bold=True)
 
-        countdown(stdscr)
+        # Get user choice
+        user_choice = get_user_choice(stdscr, title_h + 3, name)
 
+        # Countdown
+        countdown(stdscr, title_h + 5)
+
+        # Computer picks
         comp_choice = random.choice(CHOICES)
 
+        # Show both choices
         stdscr.clear()
         print_title(stdscr)
-        # Show user choice and art
-        print_centered(stdscr, len(ASCII_TITLE) + 4, f"You chose: {user_choice.upper()}", color_pair=4, bold=True)
-        print_ascii_art(stdscr, len(ASCII_TITLE) + 6, ASCII_ART[user_choice], color_pair=4)
+        print_score(stdscr, name, user_score, comp_score)
 
-        # VERSUS banner
-        print_centered(stdscr, len(ASCII_TITLE) + 13, "VERSUS", color_pair=3, bold=True)
+        print_centered(stdscr, title_h + 1,
+                       f"{name} chose: {user_choice.upper()}", 4, bold=True)
+        print_ascii_art(stdscr, title_h + 3, ASCII_ART[user_choice], 4)
 
-        # Show computer choice and art
-        print_centered(stdscr, len(ASCII_TITLE) + 15, f"Computer chose: {comp_choice.upper()}", color_pair=5, bold=True)
-        print_ascii_art(stdscr, len(ASCII_TITLE) + 17, ASCII_ART[comp_choice], color_pair=5)
+        print_centered(stdscr, title_h + 3 + art_h + 1,
+                       "VERSUS", 3, bold=True)
+
+        print_centered(stdscr, title_h + 3 + art_h + 3,
+                       f"Computer chose: {comp_choice.upper()}", 5, bold=True)
+        print_ascii_art(stdscr, title_h + 3 + art_h + 5,
+                        ASCII_ART[comp_choice], 5)
+
         stdscr.refresh()
+        time.sleep(1)
 
-        winner = decide_winner(user_choice, comp_choice)
-
-        if winner == "user":
-            result_msg = "You win this round!"
-            color = 2
+        # Decide winner
+        result = decide_winner(user_choice, comp_choice)
+        if result == "user":
+            msg = "You win this round!"
             user_score += 1
-        elif winner == "computer":
-            result_msg = "Computer wins this round!"
-            color = 1
+            col = 2
+        elif result == "computer":
+            msg = "Computer wins this round!"
             comp_score += 1
+            col = 1
         else:
-            result_msg = "It's a tie!"
-            color = 3
+            msg = "It's a tie!"
+            col = 3
 
-        print_centered(stdscr, len(ASCII_TITLE) + 24, result_msg, color_pair=color, bold=True)
-        print_centered(stdscr, len(ASCII_TITLE) + 26, f"Score — You: {user_score}  Computer: {comp_score}", color_pair=5, bold=True)
-        print_centered(stdscr, len(ASCII_TITLE) + 28, "Press any key to continue...", color_pair=5)
+        # Print round result + updated score
+        res_y = title_h + 3 + art_h*2 + 6
+        print_centered(stdscr, res_y, msg, col, bold=True)
+        print_centered(stdscr, res_y + 2,
+                       f"Score — {name}: {user_score}   AI: {comp_score}",
+                       5, bold=True)
+        print_centered(stdscr, res_y + 4, "Press any key to continue…", 5)
         stdscr.refresh()
         stdscr.getch()
 
+        # early exit if someone already won best-of-5
+        if user_score == needed or comp_score == needed:
+            break
+
+    # Final summary
     stdscr.clear()
     print_title(stdscr)
-    if user_score > comp_score:
-        final_msg = "CONGRATULATIONS! You won the game!"
-        color = 2
-    elif comp_score > user_score:
-        final_msg = "SORRY! The computer won the game."
-        color = 1
-    else:
-        final_msg = "IT'S A TIE GAME!"
-        color = 3
+    print_score(stdscr, name, user_score, comp_score)
 
-    print_centered(stdscr, len(ASCII_TITLE) + 12, final_msg, color_pair=color, bold=True)
-    print_centered(stdscr, len(ASCII_TITLE) + 14, f"Final Score — You: {user_score}  Computer: {comp_score}", color_pair=5, bold=True)
-    print_centered(stdscr, len(ASCII_TITLE) + 16, "Press any key to exit.", color_pair=5)
+    if user_score > comp_score:
+        final = "CONGRATULATIONS! You won the match!"
+        col = 2
+    elif comp_score > user_score:
+        final = "SORRY! The computer won the match."
+        col = 1
+    else:
+        final = "IT'S A DRAW!"
+        col = 3
+
+    print_centered(stdscr, title_h + 2, final, col, bold=True)
+    print_centered(stdscr, title_h + 4,
+                   f"Final Score — {name}: {user_score}   AI: {comp_score}",
+                   5, bold=True)
+    print_centered(stdscr, title_h + 6, "Press any key to exit…", 5)
     stdscr.refresh()
     stdscr.getch()
 
