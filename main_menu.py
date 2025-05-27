@@ -13,7 +13,6 @@ Also, we found it fun to use ASCII art for the logo and menu items, giving it a 
 
 # Import necessary modules
 import os 
-import sys
 import time
 from pathlib import Path
 from typing import Dict, Callable
