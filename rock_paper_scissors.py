@@ -2,6 +2,11 @@
 import curses
 import random
 import time
+import locale
+
+# Set terminal encoding for decoding user input gracefully
+locale.setlocale(locale.LC_ALL, '')
+code = locale.getpreferredencoding()
 
 # ── CONFIGURATION ─────────────────────────────────────────────────────────────
 
@@ -46,23 +51,32 @@ CHOICES = ["rock","paper","scissors"]
 
 def print_centered(stdscr, y, text, color_pair, bold=False):
     h, w = stdscr.getmaxyx()
-    x = max(0, (w - len(text)) // 2)
+    x = max(0, min(w - len(text), (w - len(text)) // 2))
     attr = curses.color_pair(color_pair)
     if bold:
         attr |= curses.A_BOLD
-    stdscr.addstr(y, x, text, attr)
+    try:
+        stdscr.addstr(y, x, text, attr)
+    except curses.error:
+        pass
 
 def print_ascii_art(stdscr, start_y, art_lines, color_pair):
     h, w = stdscr.getmaxyx()
     for i, line in enumerate(art_lines):
-        x = max(0, (w - len(line)) // 2)
-        stdscr.addstr(start_y + i, x, line, curses.color_pair(color_pair))
+        x = max(0, min(w - len(line), (w - len(line)) // 2))
+        try:
+            stdscr.addstr(start_y + i, x, line, curses.color_pair(color_pair))
+        except curses.error:
+            pass
 
 def print_title(stdscr):
     h, w = stdscr.getmaxyx()
     for i, line in enumerate(ASCII_TITLE):
-        x = max(0, (w - len(line)) // 2)
-        stdscr.addstr(i, x, line, curses.color_pair(2)|curses.A_BOLD)
+        x = max(0, min(w - len(line), (w - len(line)) // 2))
+        try:
+            stdscr.addstr(i, x, line, curses.color_pair(2)|curses.A_BOLD)
+        except curses.error:
+            pass
 
 def print_score(stdscr, name, user_score, comp_score):
     h, w = stdscr.getmaxyx()
@@ -70,7 +84,10 @@ def print_score(stdscr, name, user_score, comp_score):
     # place on line 1, flush right with a 2-char margin
     y = 1
     x = max(0, w - len(score_text) - 2)
-    stdscr.addstr(y, x, score_text, curses.color_pair(5)|curses.A_BOLD)
+    try:
+        stdscr.addstr(y, x, score_text, curses.color_pair(5)|curses.A_BOLD)
+    except curses.error:
+        pass
 
 # ── INPUT HELPERS ──────────────────────────────────────────────────────────────
 
@@ -80,8 +97,8 @@ def prompt_name(stdscr, row):
     print_centered(stdscr, row, prompt, 5, bold=True)
     stdscr.refresh()
     h, w = stdscr.getmaxyx()
-    col = (w - len(prompt)) // 2 + len(prompt)
-    name = stdscr.getstr(row, col, 20).decode().strip()
+    col = min(w - 1, (w - len(prompt)) // 2 + len(prompt))
+    name = stdscr.getstr(row, col, 20).decode(code).strip()
     curses.noecho()
     return name or "Player"
 
@@ -93,17 +110,22 @@ def get_user_choice(stdscr, row, name):
         print_centered(stdscr, row, prompt, 5)
         stdscr.refresh()
         c = stdscr.getch()
-        if c in (ord('r'),ord('R')): return "rock"
-        if c in (ord('p'),ord('P')): return "paper"
-        if c in (ord('s'),ord('S')): return "scissors"
+        if c == 27:  # ESC key to exit
+            return None
+        if c in (ord('r'), ord('R')): return "rock"
+        if c in (ord('p'), ord('P')): return "paper"
+        if c in (ord('s'), ord('S')): return "scissors"
 
 def countdown(stdscr, row):
-    for i in (3,2,1):
+    for i in (3, 2, 1):
         stdscr.move(row, 0)
         stdscr.clrtoeol()
         print_centered(stdscr, row, f"{i}...", 3, bold=True)
         stdscr.refresh()
         time.sleep(1)
+    stdscr.move(row, 0)
+    stdscr.clrtoeol()
+    stdscr.refresh()
 
 # ── GAME LOGIC ────────────────────────────────────────────────────────────────
 
@@ -154,6 +176,8 @@ def main(stdscr):
 
         # Get user choice
         user_choice = get_user_choice(stdscr, title_h + 3, name)
+        if user_choice is None:
+            return  # exit gracefully if ESC pressed
 
         # Countdown
         countdown(stdscr, title_h + 5)

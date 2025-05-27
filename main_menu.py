@@ -1,8 +1,9 @@
 
+
 """
 DOCUMENTATION
 
-So this script is the main menu for a collection of terminal games, including Tic‑Tac‑Toe, Snake, Minesweeper (To be finished), and Hangman.
+So this script is the main menu for a collection of terminal games, including Tic‑Tac‑Toe, Snake,  (To be finished), and Hangman.
 
 The whole script is designed to be run in a terminal, and it dynamically imports the game modules when the user selects a game.
 This enables us to create separate game files while keeping the main menu clean and organized. Furthermore, it allows for easy addition of new games in the future.
@@ -10,6 +11,21 @@ This enables us to create separate game files while keeping the main menu clean 
 The theme we went for is a retro terminal style, reminiscent of classic text-based games, with a focus on simplicity and ease of use.
 Also, we found it fun to use ASCII art for the logo and menu items, giving it a nostalgic feel.
 """
+# Check if the necessary packages are installed, and install them if not.
+
+import subprocess
+import sys
+
+def ensure_package(package):
+    try:
+        __import__(package)
+    except ImportError:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+
+# Only needed on Windows
+if sys.platform.startswith("win"):
+    ensure_package("curses")  # actually installs 'windows-curses'
+
 
 # Import necessary modules
 import os 
@@ -18,6 +34,8 @@ from pathlib import Path
 from typing import Dict, Callable
 import importlib
 import traceback
+
+# This script auto-installs missing modules (e.g. 'windows-curses' for Windows).
 
 # Set terminal styles for output
 RESET  = "\033[0m"
@@ -65,45 +83,45 @@ def _launch_placeholder(game_name: str) -> None:
 
 # ── Tic‑Tac‑Toe launcher ─────────────────────────────────────────────────────
 def start_tic_tac_toe() -> None:
-    """Import and start Tic‑Tac‑Toe. Tries several common entrypoints before falling back to a placeholder."""
-    script_dir = Path(__file__).resolve().parent # Get the directory of the current script. 
-    if str(script_dir) not in sys.path:
-        sys.path.insert(0, str(script_dir))
-
-    try:
-        ttt = importlib.import_module("tic_tac_toe") 
-    except ModuleNotFoundError:
-        _launch_placeholder("Tic‑Tac‑Toe (module not found)")
-        return
-
-    # Try a sequence of likely entry‑points.
-    for attr in ("main", "game_loop", "play"):
-        if hasattr(ttt, attr):
-            try:
-                getattr(ttt, attr)()
-                return  # Success!
-            except Exception as exc:  # pragma: no cover
-                print(f"{YELLOW}Error while running {attr}(): {exc}{RESET}")
-                break
-
-    _launch_placeholder("Tic‑Tac‑Toe (no usable entrypoint)") 
-
-# ── Snake launcher ────────────────────────────────────────────────────────
-def start_snake() -> None:
-    """Import and start Snake (snake.py)."""
+    """Import and start Tic‑Tac‑Toe (tic_tac_toe.py)."""
+    # Ensure the current script directory is in the module search path
     script_dir = Path(__file__).resolve().parent
     script_path = str(script_dir)
-    # Ensure project directory is first in search path
     if script_path in sys.path:
         sys.path.remove(script_path)
     sys.path.insert(0, script_path)
 
-    # Hot‑reload so edits are picked up without restarting the menu
+    # Reload the module if already imported
+    if "tic_tac_toe" in sys.modules:
+        del sys.modules["tic_tac_toe"]
+    try:
+        ttt_mod = importlib.import_module("tic_tac_toe")
+        importlib.reload(ttt_mod)
+        # Call the game's main function
+        getattr(ttt_mod, "main")()
+    except Exception:
+        print(f"{YELLOW}Error launching Tic‑Tac‑Toe:{RESET}")
+        traceback.print_exc()
+        input("\nPress Enter to return to the main menu...")
+        return
+
+# ── Snake launcher ────────────────────────────────────────────────────────
+def start_snake() -> None:
+    """Import and start Snake (snake.py)."""
+    # Ensure the current script directory is in the module search path
+    script_dir = Path(__file__).resolve().parent
+    script_path = str(script_dir)
+    if script_path in sys.path:
+        sys.path.remove(script_path)
+    sys.path.insert(0, script_path)
+
+    # Reload the module if already imported
     if "snake" in sys.modules:
         del sys.modules["snake"]
     try:
         snake_mod = importlib.import_module("snake")
         importlib.reload(snake_mod)
+        # Call the game's main function
         getattr(snake_mod, "main")()
     except Exception:
         print(f"{YELLOW}Error launching Snake:{RESET}")
@@ -114,17 +132,20 @@ def start_snake() -> None:
 # ── Hangman launcher ──────────────────────────────────────────────────────────
 def start_hangman() -> None:
     """Import and start Hangman (hangman.py)."""
+    # Ensure the current script directory is in the module search path
     script_dir = Path(__file__).resolve().parent
     script_path = str(script_dir)
     if script_path in sys.path:
         sys.path.remove(script_path)
     sys.path.insert(0, script_path)
 
+    # Reload the module if already imported
     if "hangman" in sys.modules:
         del sys.modules["hangman"]
     try:
         hangman_mod = importlib.import_module("hangman")
         importlib.reload(hangman_mod)
+        # Call the game's main function
         getattr(hangman_mod, "main")()
     except Exception:
         print(f"{YELLOW}Error launching Hangman:{RESET}")
@@ -136,18 +157,20 @@ def start_hangman() -> None:
 def start_rock_paper_scissors() -> None:
     """Import and start Rock Paper Scissors (rock_paper_scissors.py)."""
     import curses
+    # Ensure the current script directory is in the module search path
     script_dir = Path(__file__).resolve().parent
     script_path = str(script_dir)
     if script_path in sys.path:
         sys.path.remove(script_path)
     sys.path.insert(0, script_path)
 
+    # Reload the module if already imported
     if "rock_paper_scissors" in sys.modules:
         del sys.modules["rock_paper_scissors"]
     try:
         rps_mod = importlib.import_module("rock_paper_scissors")
         importlib.reload(rps_mod)
-        # Instead of calling main() directly, use curses.wrapper to run it properly
+        # Call the game's main function using curses.wrapper
         curses.wrapper(rps_mod.main)
     except Exception:
         print(f"{YELLOW}Error launching Rock Paper Scissors:{RESET}")
@@ -157,30 +180,29 @@ def start_rock_paper_scissors() -> None:
 
 def start_mastermind() -> None:
     """Import and start Mastermind (mastermind.py)."""
-    # 1) clear away the menu
+    # Clear the menu before launching the game
     clear()
-
-    # 2) make sure our folder is on sys.path
-    script_dir  = Path(__file__).resolve().parent
+    # Ensure the current script directory is in the module search path
+    script_dir = Path(__file__).resolve().parent
     script_path = str(script_dir)
     if script_path in sys.path:
         sys.path.remove(script_path)
     sys.path.insert(0, script_path)
 
-    # 3) reload & run
+    # Reload the module if already imported
     if "mastermind" in sys.modules:
         del sys.modules["mastermind"]
     try:
-        import mastermind
-        importlib.reload(mastermind)
-        mastermind.main()
+        mastermind_mod = importlib.import_module("mastermind")
+        importlib.reload(mastermind_mod)
+        # Call the game's main function
+        getattr(mastermind_mod, "main")()
     except Exception:
         print(f"{YELLOW}Error launching Mastermind:{RESET}")
         traceback.print_exc()
         input("\nPress Enter to return to the main menu…")
         return
-
-    # 4) once the user hits “Enter” in the game, clear again
+    # Clear the screen again after the user exits the game
     clear()
 
 # ── Menu configuration ────────────────────────────────────────────────────────
@@ -188,7 +210,6 @@ def start_mastermind() -> None:
 MENU_ITEMS: Dict[str, Callable[[], None]] = {
     "Tic‑Tac‑Toe": start_tic_tac_toe,
     "Snake":       start_snake,
-    "Minesweeper": lambda: _launch_placeholder("Minesweeper"),
     "Hangman":     start_hangman,
     "Rock Paper Scissors": start_rock_paper_scissors,
     "Mastermind":           start_mastermind,
@@ -198,6 +219,10 @@ MENU_ITEMS: Dict[str, Callable[[], None]] = {
 def draw_menu() -> None:
     """
     Clear the screen and display the ASCII logo followed by the numbered game menu items.
+
+    This function clears the terminal, prints the ASCII art logo, and then lists all available
+    games with their corresponding menu numbers. The menu items alternate colors for better
+    readability. An option to exit (0) is also provided.
     """
     clear()
     print(ASCII_LOGO)
@@ -209,6 +234,10 @@ def draw_menu() -> None:
 def main() -> None:
     """
     Main application loop: draw the menu, process user input to launch games or exit.
+
+    This function repeatedly displays the menu, prompts the user for input, and launches
+    the selected game. If the user enters 0, the program exits gracefully. Invalid input
+    is ignored and the menu is redrawn.
     """
     while True:
         draw_menu()
@@ -224,5 +253,6 @@ def main() -> None:
         if 1 <= idx <= len(MENU_ITEMS):
             list(MENU_ITEMS.values())[idx-1]()
 
-if __name__ == "__main__": # This ensures the main function is called only when the script is run directly, not when imported.
+if __name__ == "__main__": 
+    # This ensures the main function is called only when the script is run directly, not when imported.
     main()
