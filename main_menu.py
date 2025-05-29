@@ -13,25 +13,53 @@ Also, we found it fun to use ASCII art for the logo and menu items, giving it a 
 """
 # Check if the necessary packages are installed, and install them if not.
 
+
+"""
+The list of packages needed for all the games:
+# Standard Library
+- os              : File system and terminal handling
+- sys             : System-specific functions and parameters
+- time            : Delays and timing functions
+- random          : Random value generation
+- json            : Parsing and writing JSON data
+- shutil          : Terminal size and file operations
+- pathlib         : Path manipulations
+- importlib       : Dynamic imports and module reloading
+- traceback       : Traceback printing for error handling
+- typing          : Type hints (e.g., Dict, Callable)
+- locale          : Unicode and localization handling
+
+# Third-Party
+- colorama        : Colored text output in terminal (cross-platform)
+- pygame          : Game development library (used in some games)
+- curses / windows-curses : Terminal handling for character-cell UIs (used in RPS)
+"""
+
+# ── Main menu script for terminal games collection ─────────────────────────────
 import subprocess
 import sys
 
-def ensure_package(package):
-    try:
-        __import__(package)
-    except ImportError:
-        subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+# Ensure all packages needed for all games are installed
+def ensure_all_game_packages():
+    packages = [
+        "colorama", "pygame", "curses", "shutil", "locale", "json", "time", "random",
+        "os", "sys", "pathlib", "importlib", "traceback", "typing"
+    ]
+    for pkg in set(packages):  # use set to avoid duplicates
+        try:
+            __import__(pkg)
+        except ImportError:
+            print(f"Installing missing package: {pkg}")
+            subprocess.check_call([sys.executable, "-m", "pip", "install", pkg])
 
-# Only needed on Windows
-if sys.platform.startswith("win"):
-    ensure_package("curses")  # actually installs 'windows-curses'
+# the code above should install all the necessary packages for the games to run.
 
 
 # Import necessary modules
-import os 
-import time
-from pathlib import Path
-from typing import Dict, Callable
+import os # for clearing the terminal
+import time # for sleep functionality
+from pathlib import Path # for handling file paths
+from typing import Dict, Callable 
 import importlib
 import traceback
 
@@ -58,7 +86,7 @@ ASCII_LOGO = f"""{GREEN}{BOLD}
 ║                     {CYAN}CODE @ HSG{RESET}{GREEN}{BOLD}                          ║
 ╚═════════════════════════════════════════════════════════╝{RESET}
 """
-
+# It was a pain to generate...
 
 # now the functions that will be used to clear the terminal, pause for a moment, and launch the games
 def clear() -> None: # 
@@ -205,14 +233,42 @@ def start_mastermind() -> None:
     # Clear the screen again after the user exits the game
     clear()
 
+#
+# ── Roulette Launcher ──────────────────────────────────────────────────────────
+def start_roulette() -> None:
+    """Import and start Roulette (roulette.py)."""
+    # Ensure the current script directory is in the module search path
+    script_dir = Path(__file__).resolve().parent
+    script_path = str(script_dir)
+    if script_path in sys.path:
+        sys.path.remove(script_path)
+    sys.path.insert(0, script_path)
+
+    # Reload the module if already imported
+    if "roulette" in sys.modules:
+        del sys.modules["roulette"]
+    try:
+        roulette_mod = importlib.import_module("roulette")
+        importlib.reload(roulette_mod)
+        # Run the Roulette game and return to the menu upon exit
+        result = getattr(roulette_mod, "main")()
+        if result == "exit":
+            return
+    except Exception:
+        print(f"{YELLOW}Error launching Roulette:{RESET}")
+        traceback.print_exc()
+        input("\nPress Enter to return to the main menu...")
+        return
+
 # ── Menu configuration ────────────────────────────────────────────────────────
- # Mapping of menu item names to their corresponding launcher functions
+# Mapping of menu item names to their corresponding launcher functions
 MENU_ITEMS: Dict[str, Callable[[], None]] = {
     "Tic‑Tac‑Toe": start_tic_tac_toe,
     "Snake":       start_snake,
     "Hangman":     start_hangman,
     "Rock Paper Scissors": start_rock_paper_scissors,
     "Mastermind":           start_mastermind,
+    "Roulette":             start_roulette,
 }
 
 # ── Core drawing & loop ────────────────────────────────────────────────────────
@@ -231,6 +287,9 @@ def draw_menu() -> None:
         print(f"   {color}{idx}. {title}{RESET}")
     print(f"   0. Exit\n")
 
+#
+
+# ── Main application loop ─────────────────────────────────────────────────────
 def main() -> None:
     """
     Main application loop: draw the menu, process user input to launch games or exit.
@@ -255,4 +314,5 @@ def main() -> None:
 
 if __name__ == "__main__": 
     # This ensures the main function is called only when the script is run directly, not when imported.
+    ensure_all_game_packages()
     main()

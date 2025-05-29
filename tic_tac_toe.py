@@ -31,11 +31,11 @@
 
 
 # Import necessary libraries
-import os
-import shutil
-import time
-import random
-import json
+import os # For clearing the console screen
+import shutil # For getting terminal size
+import time # For adding delays in the game
+import random # For generating random moves for the AI --> see AI_RANDOMNESS
+import json # For loading the opening book of optimal moves from a JSON file
 
 # ── Opening-book of optimal moves ─────────────────────────────────────────
 BOOK = {}
@@ -53,12 +53,12 @@ except (FileNotFoundError, json.JSONDecodeError):
 AI_RANDOMNESS = 0.2  # 20% chance to make a random move
 
 
-# Function to clear the console screen
+# it clears the console screen
 def clear():
     # Clear the console screen based on the operating system
     os.system('cls' if os.name == 'nt' else 'clear') 
 
-# Function to check if no winning condition is possible
+# check if no winning condition is possible by using a table of winning conditions
 def no_possible_win(board):
     """
     Check if there is no possible winning condition left on the board.
@@ -141,7 +141,7 @@ def print_board(board, score, players, show_numbers):
     # Display additional help message
     print("\nType 'esc' to return to menu at any time.\n")
 
-# Function to check if a player has won
+# check if a player has won
 def check_win(board, player):
     """
     Check if the given player has achieved a win on the tic-tac-toe board.
@@ -153,7 +153,7 @@ def check_win(board, player):
     Returns:
         bool: True if the player has won, False otherwise.
     """
-    # Define the eight possible winning conditions as tuples of cell indices.
+    # we have eight possible winning conditions as tuples of cell indices.
     win_cond = [
         (0,0, 0,1, 0,2),  # Top row
         (1,0, 1,1, 1,2),  # Middle row
@@ -204,15 +204,19 @@ def get_move(board, player):
         if move.lower() == 'esc':
             return 'esc'
         if move.isdigit() and 1 <= int(move) <= 9:
-            r, c = divmod(int(move) - 1, 3)
-            if board[r][c] == ' ':
-                return r, c
+            r, c = divmod(int(move) - 1, 3) # Convert move to row and column indices
+            if board[r][c] == ' ': # Check if the cell is empty
+                return r, c 
             else:
-                print("Cell is taken!")
+                print("Cell is taken!") # Prompt if the cell is already occupied
         else:
-            print("Invalid input.")
+            print("Invalid input.") # Prompt if the input is not a valid number between 1 and 9
 
-# Minimax algorithm with alpha-beta pruning
+
+
+# ── Minimax Algorithm with Alpha-Beta Pruning ─────────────────────────────
+
+# Minimax algorithm with alpha-beta pruning. It is still being worked on, but it is not used in the final version of the game.
 def minimax(board, depth, is_maximizing, alpha, beta):
     """
     Recursively evaluates the tic-tac-toe board using the Minimax algorithm enhanced
@@ -273,25 +277,6 @@ def minimax(board, depth, is_maximizing, alpha, beta):
                 break
         return min_eval
 
-# Load optimal move book from JSON
-# The json file should contain a mapping of board states to optimal moves
-# The keys are strings representing the board state, and the values are indices of the optimal move.
-# Example: {"-X O O": 4} means the optimal move for the board state "-X O O" is at index 4 (row 1, column 1).
-def load_opening_book():
-    """
-    Load the opening book from a JSON file. The file should contain a mapping of board states to optimal moves.
-
-    Returns:
-        dict: A dictionary where keys are strings representing board states and values are indices of optimal moves.
-    """
-    try:
-        with open(os.path.join(os.path.dirname(__file__), "tictactoe_book.json")) as f:
-            return json.load(f)
-    except FileNotFoundError:
-        print("Warning: tictactoe_book.json not found, falling back to Minimax.")
-        return {}
-
-
 
 
 
@@ -328,6 +313,8 @@ def best_move(board):
 
     return best  # Return the best move
 
+
+# ── AI Move Function ─────────────────────────────────────────────────────
 # Function to make the AI's move
 def ai_move(board):
     """
@@ -339,7 +326,7 @@ def ai_move(board):
     Returns:
         tuple: A tuple (row, column) representing the AI's chosen cell.
     """
-    if random.random() < AI_RANDOMNESS:
+    if random.random() < AI_RANDOMNESS: # Introduce randomness in AI moves
         # Random move to add unpredictability
         return random.choice([(i, j) for i in range(3) for j in range(3) if board[i][j] == ' '])
     
@@ -358,6 +345,29 @@ def ai_move(board):
     
     # Fallback to a random move if no optimal move is found
     return random.choice([(i, j) for i in range(3) for j in range(3) if board[i][j] == ' '])
+
+
+# Load optimal move book from JSON
+# The json file should contain a mapping of board states to optimal moves taken from teh web.
+# The keys are strings representing the board state, and the values are indices of the optimal move.
+# Example: {"-X O O": 4} means the optimal move for the board state "-X O O" is at index 4 (row 1, column 1).
+def load_opening_book():
+    """
+    Load the opening book from a JSON file. The file should contain a mapping of board states to optimal moves.
+
+    Returns:
+        dict: A dictionary where keys are strings representing board states and values are indices of optimal moves.
+    """
+    try:
+        with open(os.path.join(os.path.dirname(__file__), "tictactoe_book.json")) as f:
+            return json.load(f)
+    except FileNotFoundError:
+        print("Warning: tictactoe_book.json not found, falling back to Minimax.")
+        return {}
+
+
+
+# ── Game Logic ──────────────────────────────────────────────────────────
 
 # Function to play a single round of Tic-Tac-Toe
 def play_round(players, single_mode, score, show_numbers):
@@ -479,6 +489,6 @@ def main_menu():
         else:  # Invalid input, wait briefly before re-displaying the menu
             time.sleep(1)
 
-# Entry point of the program
+
 if __name__ == "__main__":
     main()

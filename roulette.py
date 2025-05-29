@@ -1,16 +1,29 @@
 """
 DOCUMENTATION
 
+This script implements a simple terminal-based Roulette game using Pygame for graphics and input handling.
+The game allows players to:
+- Start with a specified amount of coins.
+- Place bets on a number between 0 and 36.
+- Spin the roulette wheel to get a random number.
+- Win or lose coins based on the bet and the result.
+- Play multiple rounds until they choose to exit.
+
+The functions are:
+1. draw_window(): Renders the game window with current balance, last result, and messages.
+2. get_user_input() : Handles user input for betting and balance management.
+3. spin_wheel() : Simulates spinning the roulette wheel and calculates winnings or losses.
+4. ask_next_round() : Prompts the player to continue or exit the game.
 """
 
 
 # imports
-import pygame
-import random
+import pygame # for game graphics and input handling
+import random # for random number generation
 import sys
 
 # Initialize Pygame
-pygame.init()
+pygame.init() # Initialize the Pygame library
 
 # Set up display
 WIDTH, HEIGHT = 800, 600
@@ -129,7 +142,7 @@ def ask_next_round():
         elif choice == "n":
             print("Thanks for playing!")
             pygame.quit()
-            sys.exit()
+            return False
         else:
             print("Please enter 'y' or 'n'.")
 
@@ -167,7 +180,7 @@ def main():
         clock.tick(30)
 
     pygame.quit()
-    sys.exit()
+    return "exit"
 
 
 if __name__ == "__main__":

@@ -11,12 +11,11 @@ implement, or rather to scale up efficiently, because it requires a dictionary o
 
 """
 # as usual we import the necessary modules
-import os
-import random
-import sys
-import time
-from pathlib import Path
-import json
+import os # for clearing the terminal
+import random # for selecting random words
+from pathlib import Path # for handling file paths
+import json # for loading the dictionaries from JSON files --> needed for loading the dictionaries.
+
 
 # We set the styles parameters for the terminal output and the banner
 RESET  = "\033[0m"
@@ -26,7 +25,7 @@ YELLOW = "\033[33m"
 CYAN   = "\033[36m"
 RED    = "\033[31m"
 
-
+# as for all the games, we create a banner that will be displayed at the start of the game.
 BANNER = [
     "╔═══════════════════════════════════════╗",
     "║          H  A  N  G  M  A  N          ║",
@@ -40,11 +39,12 @@ DICTIONARIES = {
     "FR": json.load(open(Path(__file__).with_name("french_dict.json")))
 }
 
+# - CONSTANTS - #
 # Maximum number of incorrect tries allowed before losing
 # (this can be adjusted to make the game easier or harder)
 MAX_TRIES = 6
 
-def clear():
+def clear(): 
     """
     Clear the terminal screen using the appropriate system command.
     """
@@ -103,7 +103,7 @@ def render(word, guessed):
     Returns:
         str: The formatted display of the word.
     """
-    return " ".join([c if c in guessed else "_" for c in word]) 
+    return " ".join([c if c in guessed else "_" for c in word])  # Join letters with spaces, showing underscores for unguessed letters.
 
 
 def print_status(word, guessed, tries, language, hint_used=False, hint=None):
@@ -172,6 +172,7 @@ def end_screen(word, won, language):
             return False
 
 
+# ─────────────────────────────────────────────────────────────────────────────────
 # This function is the main game loop, where we handle the language selection, word guessing, and replay logic.
 def main():
     """

@@ -2,7 +2,26 @@
 """
 Terminal Snake – retro‑arcade edition for CodeHSG.
 
-Controls:  ← ↑ ↓ →  (arrow keys)   |   ESC = quit
+Controls are  ← ↑ ↓ →  (arrow keys)   |   ESC = quit (the keyboard)
+The game is played in a terminal window, where the player controls a snake
+using the arrow keys, trying to eat food (represented by a 2×2 square of '*')
+without hitting the walls (if solid) or biting its own tail.
+Speed increases with each food item eaten, making the game progressively harder.
+The game features a main menu with options to start the game and choose whether
+walls are solid or wrapped (teleporting).
+
+This script uses the curses module to handle terminal input and output.
+The game consists of several functions:
+
+These functions are 
+1. _start_screen: displays the game banner and instructions, waits for SPACE or ENTER to start.
+2. _ask_walls: asks whether walls are solid or wrapped, returns True/False.
+3. _game: main game loop, handles snake movement, food generation, and collision detection.
+4. _new_food: generates a new food position not occupied by the snake.
+5. _is_opposite: checks if two direction vectors are opposite.
+6. _game_over: displays the game over screen with the final score and asks if the player wants to play again.
+
+
 """
 
 # This is a terminal-based Snake game written with the curses module.
