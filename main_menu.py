@@ -1,5 +1,3 @@
-
-
 """
 DOCUMENTATION
 
@@ -32,25 +30,31 @@ The list of packages needed for all the games:
 # Third-Party
 - colorama        : Colored text output in terminal (cross-platform)
 - pygame          : Game development library (used in some games)
-- curses / windows-curses : Terminal handling for character-cell UIs (used in RPS)
+- blackjack_strategy : ML-based Blackjack basic strategy recommendation library (install via `pip install blackjack-strategy`)
+- curses          : Terminal handling for character-cell UIs (install on Windows via `pip install windows-curses`)
 """
 
 # ── Main menu script for terminal games collection ─────────────────────────────
 import subprocess
 import sys
 
-# Ensure all packages needed for all games are installed
+# Ensure all third-party packages needed for all games are installed
 def ensure_all_game_packages():
-    packages = [
-        "colorama", "pygame", "curses", "shutil", "locale", "json", "time", "random",
-        "os", "sys", "pathlib", "importlib", "traceback", "typing"
-    ]
-    for pkg in set(packages):  # use set to avoid duplicates
+    """
+    Ensure required third-party packages are installed.
+    Uses correct pip package names for installation.
+    """
+    third_party = {
+        "colorama": "colorama",
+        "pygame": "pygame",
+        "curses": "windows-curses"
+    }
+    for import_name, pip_name in third_party.items():
         try:
-            __import__(pkg)
+            __import__(import_name)
         except ImportError:
-            print(f"Installing missing package: {pkg}")
-            subprocess.check_call([sys.executable, "-m", "pip", "install", pkg])
+            print(f"Installing missing package: {pip_name}")
+            subprocess.check_call([sys.executable, "-m", "pip", "install", pip_name])
 
 # the code above should install all the necessary packages for the games to run.
 
@@ -235,6 +239,7 @@ def start_mastermind() -> None:
 
 #
 # ── Roulette Launcher ──────────────────────────────────────────────────────────
+# ── Roulette Launcher ──────────────────────────────────────────────────────────
 def start_roulette() -> None:
     """Import and start Roulette (roulette.py)."""
     # Ensure the current script directory is in the module search path
@@ -260,6 +265,29 @@ def start_roulette() -> None:
         input("\nPress Enter to return to the main menu...")
         return
 
+# ── Blackjack launcher ────────────────────────────────────────────────────────
+def start_blackjack() -> None:
+    """Import and start Blackjack (black_jack.py)."""
+    # Ensure current script directory is in the module search path
+    script_dir = Path(__file__).resolve().parent
+    script_path = str(script_dir)
+    if script_path in sys.path:
+        sys.path.remove(script_path)
+    sys.path.insert(0, script_path)
+    # Reload the module if already imported
+    if "black_jack" in sys.modules:
+        del sys.modules["black_jack"]
+    try:
+        bj_mod = importlib.import_module("black_jack")
+        importlib.reload(bj_mod)
+        # Call the blackjack module's main function
+        getattr(bj_mod, "main")()
+    except Exception:
+        print(f"{YELLOW}Error launching Blackjack:{RESET}")
+        traceback.print_exc()
+        input("\nPress Enter to return to the main menu...")
+        return
+
 # ── Menu configuration ────────────────────────────────────────────────────────
 # Mapping of menu item names to their corresponding launcher functions
 MENU_ITEMS: Dict[str, Callable[[], None]] = {
@@ -269,6 +297,7 @@ MENU_ITEMS: Dict[str, Callable[[], None]] = {
     "Rock Paper Scissors": start_rock_paper_scissors,
     "Mastermind":           start_mastermind,
     "Roulette":             start_roulette,
+    "Blackjack":            start_blackjack,
 }
 
 # ── Core drawing & loop ────────────────────────────────────────────────────────
