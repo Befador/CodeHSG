@@ -1,15 +1,28 @@
 #!/usr/bin/env python3
-import curses
-import random
-import time
-import locale
+"""
+DOCUMENTATION
 
-# Set terminal encoding for decoding user input gracefully
+This script implements a terminal-based Rock-Paper-Scissors game using the curses library.
+It displays an ASCII-art title, prompts the player for their name, and then runs a best-of-5
+match against the computer opponent.  Key features include:
+
+- Centered title, prompts, and ASCII art for rock/paper/scissors.
+- A countdown of 3 2 1 before each round.
+- Colourized output to highlight wins, losses, & ties.
+- Easay exit via the ESC key at any prompt.
+"""
+
+# ── IMPORTS & LOCALE SETUP ─────────────────────────────────────────────────────
+import curses       # for character-cell display handling
+import random       # for computer’s random choice
+import time         # for countdown delays
+import locale       # to handle wide/Unicode characters in user input
+
+# Ensure the terminal can decode user-entered names properly
 locale.setlocale(locale.LC_ALL, '')
 code = locale.getpreferredencoding()
 
 # ── CONFIGURATION ─────────────────────────────────────────────────────────────
-
 ASCII_TITLE = [
     "╔══════════════════════════════════════════════════════════╗",
     "║                                                          ║",
@@ -18,6 +31,7 @@ ASCII_TITLE = [
     "╚══════════════════════════════════════════════════════════╝",
 ]
 
+# Pre-defined ASCII art for each choice
 ASCII_ART = {
     "rock": [
         "    _______",
@@ -45,11 +59,20 @@ ASCII_ART = {
     ],
 }
 
-CHOICES = ["rock","paper","scissors"]
+CHOICES = ["rock", "paper", "scissors"]  # Valid moves
 
 # ── DRAWING HELPERS ────────────────────────────────────────────────────────────
-
 def print_centered(stdscr, y, text, color_pair, bold=False):
+    """
+    Print a single line of text centered horizontally at row y.
+
+    Args:
+        stdscr        : the main curses window
+        y (int)       : row on which to print
+        text (str)    : the string to display
+        color_pair (int): curses color pair number
+        bold (bool)   : whether to add a bold attribute
+    """
     h, w = stdscr.getmaxyx()
     x = max(0, min(w - len(text), (w - len(text)) // 2))
     attr = curses.color_pair(color_pair)
@@ -58,9 +81,19 @@ def print_centered(stdscr, y, text, color_pair, bold=False):
     try:
         stdscr.addstr(y, x, text, attr)
     except curses.error:
+        # Ignoring errors when window is too small
         pass
 
 def print_ascii_art(stdscr, start_y, art_lines, color_pair):
+    """
+    Render multi-line ASCII art centered horizontally.
+
+    Args:
+        stdscr        : the curses window
+        start_y (int) : top row for the art
+        art_lines (list[str]): lines of ASCII art
+        color_pair (int): curses color pair for the art
+    """
     h, w = stdscr.getmaxyx()
     for i, line in enumerate(art_lines):
         x = max(0, min(w - len(line), (w - len(line)) // 2))
@@ -70,28 +103,48 @@ def print_ascii_art(stdscr, start_y, art_lines, color_pair):
             pass
 
 def print_title(stdscr):
+    """
+    Display the ASCII_TITLE banner at the top of the screen.
+    """
     h, w = stdscr.getmaxyx()
     for i, line in enumerate(ASCII_TITLE):
         x = max(0, min(w - len(line), (w - len(line)) // 2))
         try:
-            stdscr.addstr(i, x, line, curses.color_pair(2)|curses.A_BOLD)
+            stdscr.addstr(i, x, line, curses.color_pair(2) | curses.A_BOLD)
         except curses.error:
             pass
 
 def print_score(stdscr, name, user_score, comp_score):
+    """
+    Show the current score in the top-right corner.
+
+    Args:
+        stdscr      : the curses window
+        name (str)  : player’s name
+        user_score (int) : player’s score
+        comp_score (int) : computer’s score
+    """
     h, w = stdscr.getmaxyx()
     score_text = f"{name}: {user_score}   AI: {comp_score}"
-    # place on line 1, flush right with a 2-char margin
     y = 1
     x = max(0, w - len(score_text) - 2)
     try:
-        stdscr.addstr(y, x, score_text, curses.color_pair(5)|curses.A_BOLD)
+        stdscr.addstr(y, x, score_text, curses.color_pair(5) | curses.A_BOLD)
     except curses.error:
         pass
 
 # ── INPUT HELPERS ──────────────────────────────────────────────────────────────
-
 def prompt_name(stdscr, row):
+    """
+    Prompt the player to enter their name.
+
+    Args:
+        stdscr : curses window
+        row (int): vertical position to display prompt
+
+    Returns:
+        str: the entered name (defaults to "Player" if blank)
+    """
     prompt = "Enter your name: "
     curses.echo()
     print_centered(stdscr, row, prompt, 5, bold=True)
@@ -103,6 +156,17 @@ def prompt_name(stdscr, row):
     return name or "Player"
 
 def get_user_choice(stdscr, row, name):
+    """
+    Prompt and read one of (r/p/s) or ESC to quit.
+
+    Args:
+        stdscr : curses window
+        row (int): where to display the prompt
+        name (str): player’s name for personalization
+
+    Returns:
+        "rock"|"paper"|"scissors"|None
+    """
     prompt = f"{name}, choose Rock (r), Paper (p) or Scissors (s): "
     while True:
         stdscr.move(row, 0)
@@ -110,13 +174,20 @@ def get_user_choice(stdscr, row, name):
         print_centered(stdscr, row, prompt, 5)
         stdscr.refresh()
         c = stdscr.getch()
-        if c == 27:  # ESC key to exit
+        if c == 27:  # ESC key
             return None
         if c in (ord('r'), ord('R')): return "rock"
         if c in (ord('p'), ord('P')): return "paper"
         if c in (ord('s'), ord('S')): return "scissors"
 
 def countdown(stdscr, row):
+    """
+    Display a 3-2-1 countdown before revealing choices.
+
+    Args:
+        stdscr : curses window
+        row (int): row for countdown text
+    """
     for i in (3, 2, 1):
         stdscr.move(row, 0)
         stdscr.clrtoeol()
@@ -128,14 +199,26 @@ def countdown(stdscr, row):
     stdscr.refresh()
 
 # ── GAME LOGIC ────────────────────────────────────────────────────────────────
-
 def decide_winner(user, comp):
+    """
+    Determine outcome of one round.
+
+    Args:
+        user (str): user’s choice
+        comp (str): computer’s choice
+
+    Returns:
+        "user" | "computer" | "tie"
+    """
     if user == comp:
         return "tie"
-    wins = {"rock":"scissors","scissors":"paper","paper":"rock"}
+    wins = {"rock": "scissors", "scissors": "paper", "paper": "rock"}
     return "user" if wins[user] == comp else "computer"
 
 def main(stdscr):
+    """
+    Main loop: initialize curses, get name, play best-of-5, and show final result.
+    """
     # —— Initialize curses & colors —— 
     curses.curs_set(0)
     curses.noecho()
@@ -143,29 +226,29 @@ def main(stdscr):
     stdscr.keypad(True)
     curses.start_color()
     curses.use_default_colors()
+    # Define color pairs for results, UI elements, and art
     curses.init_pair(1, curses.COLOR_RED,   -1)  # computer wins
     curses.init_pair(2, curses.COLOR_GREEN, -1)  # title & user wins
     curses.init_pair(3, curses.COLOR_YELLOW,-1)  # countdown & tie
     curses.init_pair(4, curses.COLOR_CYAN,  -1)  # user art
     curses.init_pair(5, curses.COLOR_MAGENTA,-1) # prompts & comp art
 
-    # heights
-    title_h = len(ASCII_TITLE)
-    art_h   = len(ASCII_ART["rock"])
+    title_h = len(ASCII_TITLE)          # height of banner
+    art_h   = len(ASCII_ART["rock"])    # height of rock art
 
-    # 1) Prompt for name
+    # 1) Prompt for player name
     stdscr.clear()
     print_title(stdscr)
-    print_score(stdscr, "…", 0, 0)           # blank score until we know name
+    print_score(stdscr, "…", 0, 0)      # placeholder score
     name = prompt_name(stdscr, title_h + 1)
     time.sleep(0.3)
 
-    # 2) Play best-of-5 (first to 3)
+    # 2) Play best-of-5 rounds
     user_score = comp_score = 0
     rounds     = 5
-    needed     = rounds//2 + 1
+    needed     = rounds // 2 + 1
 
-    for rnd in range(1, rounds+1):
+    for rnd in range(1, rounds + 1):
         stdscr.clear()
         print_title(stdscr)
         print_score(stdscr, name, user_score, comp_score)
@@ -174,18 +257,18 @@ def main(stdscr):
         print_centered(stdscr, title_h + 1,
                        f"Round {rnd} of {rounds}", 3, bold=True)
 
-        # Get user choice
+        # a) Get user’s move (or exit)
         user_choice = get_user_choice(stdscr, title_h + 3, name)
         if user_choice is None:
-            return  # exit gracefully if ESC pressed
+            return  # user pressed ESC
 
-        # Countdown
+        # b) Countdown
         countdown(stdscr, title_h + 5)
 
-        # Computer picks
+        # c) Computer random move
         comp_choice = random.choice(CHOICES)
 
-        # Show both choices
+        # d) Display both choices with ASCII art
         stdscr.clear()
         print_title(stdscr)
         print_score(stdscr, name, user_score, comp_score)
@@ -205,7 +288,7 @@ def main(stdscr):
         stdscr.refresh()
         time.sleep(1)
 
-        # Decide winner
+        # e) Decide winner and update score
         result = decide_winner(user_choice, comp_choice)
         if result == "user":
             msg = "You win this round!"
@@ -219,8 +302,8 @@ def main(stdscr):
             msg = "It's a tie!"
             col = 3
 
-        # Print round result + updated score
-        res_y = title_h + 3 + art_h*2 + 6
+        # f) Show round result and wait for key
+        res_y = title_h + 3 + art_h * 2 + 6
         print_centered(stdscr, res_y, msg, col, bold=True)
         print_centered(stdscr, res_y + 2,
                        f"Score — {name}: {user_score}   AI: {comp_score}",
@@ -229,11 +312,11 @@ def main(stdscr):
         stdscr.refresh()
         stdscr.getch()
 
-        # early exit if someone already won best-of-5
+        # Early exit if match decided
         if user_score == needed or comp_score == needed:
             break
 
-    # Final summary
+    # ── Final match summary ───────────────────────────────────────────────
     stdscr.clear()
     print_title(stdscr)
     print_score(stdscr, name, user_score, comp_score)
@@ -257,4 +340,5 @@ def main(stdscr):
     stdscr.getch()
 
 if __name__ == "__main__":
+    # Wrap main in curses.wrapper to ensure proper cleanup on exit
     curses.wrapper(main)
