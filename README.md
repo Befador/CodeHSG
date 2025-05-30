@@ -24,7 +24,7 @@ A casino-style blackjack game where players compete against the house. It includ
 A classic word guessing game. Players guess one letter at a time to reveal the hidden word before running out of attempts. The key feature the contributor tried to implement is a hint mechanism where the player can trade away tries against it.
 
 ### 🧠 Mastermind  
-A code-breaking game where the player attempts to guess a hidden sequence of numbers within a limited number of tries. The key feature of this game is the possibility to adjust of the difficulty level.
+A code-breaking game where the player attempts to guess a hidden sequence of numbers within a limited number of tries. The key feature of this game is the possibility to adjust the difficulty level.
 
 ### ✊ Rock Paper Scissors  
 The player select rock, paper, or scissors, and the result is shown instantly. This project demonstrate the contributor experimentation with random sampling and ASCII style art. 
