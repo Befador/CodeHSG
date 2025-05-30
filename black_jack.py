@@ -44,19 +44,20 @@ The functions are the following:
 """
 
 
-import random 
-import sys
-import termios
-import tty
-import select
+import random  # i mean evidently, i need to import random to shuffle the deck of cards
+import sys # standard
+import termios # for terminal settings. More precisely i use it to check for the escape key press. 
+import tty 
+import select 
 import os
 import time
 import shutil
-from colorama import init, Fore, Style
-init(autoreset=True)
+from colorama import init, Fore, Style # for the colored output in the terminal
+init(autoreset=True) 
 
+# INITIALIZATION ──────────────────────────────────────────────────────────────
 # Global player balance
-balance = 0.0
+balance = 0.0 
 
 def clear():
     os.system('cls' if os.name == 'nt' else 'clear') # as for the other games, this function clears the terminal screen
@@ -77,6 +78,8 @@ def check_escape_key(): # i m still using this function to check for the escape 
         finally:
             termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old)
     return False
+#(more or less copy pasted from the other games but with some modifications. Each games tend to have different 
+# input logics so the code changes a bit. I m not sure if this is the best way to do it, but it works for me)
 
 # ── Blackjack Strategy Matrices ───────────────────────────────────────────────
 
@@ -139,6 +142,9 @@ PAIR_STRAT = {
 
 
 # - ASCII art dimensions  ────────────────────────────────────────────────────────────
+
+# As for the other games, i use ASCII art to draw the cards and the hands. I really tried to have this 90s style of ASCII art, so i hope you like it.
+# Card dimensions
 CARD_WIDTH = 9
 CARD_HEIGHT = 5
 
@@ -195,11 +201,14 @@ def animate_ai_turn(duration: float = 0.5): # at least this works...
     sys.stdout.write("\r" + " " * 20 + "\r")
 
 
+
+
+# ── Card Drawing and Hand Management ────────────────────────────────────────────
+
 # Card definitions
 SUITS = ['♠', '♥', '♦', '♣']
 RANKS = ['A'] + [str(n) for n in range(2, 11)] + ['J', 'Q', 'K'] # standard ranks for a card game
 
-# ── Card Drawing and Hand Management ────────────────────────────────────────────
 def draw_hand(hand, hide_first=False):
     """Print ASCII art for a hand of cards; can hide the dealer's first card."""
     lines = [''] * CARD_HEIGHT
@@ -220,6 +229,9 @@ def draw_hand(hand, hide_first=False):
             lines[i] += art[i] + ' '
     print('\n'.join(lines))
 
+
+# teh hand value is super important in blackjack as the AIs will use it to determine their actions and the total
+# value is displayed to the player during the game.
 def hand_value(hand):
     """Calculate the blackjack value of a hand, accounting for Aces."""
     total = 0
@@ -264,6 +276,11 @@ def get_strategy_action(player_hand, dealer_upcard):
         return SOFT_STRAT.get(total, HARD_STRAT.get(total, {})).get(up, 'H')
     # Hard total
     return HARD_STRAT.get(total, {}).get(up, 'H') # this is the case of a hard total, i.e. no Aces in the hand or Aces counted as 1
+
+
+# ── Main Game Logic ────────────────────────────────────────────────────────────
+# this is the main function that runs the game. 
+# It handles the game loop, player input, AI actions, and game outcomes.
 
 def play_blackjack(variant: str, cash: float, num_ai: int, player_seat: int):
     """Play one full game of Blackjack with AI players."""
@@ -340,7 +357,7 @@ def play_blackjack(variant: str, cash: float, num_ai: int, player_seat: int):
                     print(f"AI {idx+1} stands at {hand_value(ai_hand)}")
                     break
 
-        # Human's turn
+        # Player's turn
         while True:
             if check_escape_key():
                 return "exit"
@@ -391,14 +408,14 @@ def play_blackjack(variant: str, cash: float, num_ai: int, player_seat: int):
         dealer_total = hand_value(dealer_hand)
 
         # Payout
-        if player_total > 21 or (dealer_total <= 21 and dealer_total > player_total):
+        if player_total > 21 or (dealer_total <= 21 and dealer_total > player_total): # the player busts or the dealer has a better hand
             print(Fore.RED + "Dealer wins.")
             # bet is lost
-        elif dealer_total > 21 or player_total > dealer_total:
+        elif dealer_total > 21 or player_total > dealer_total: # the dealer busts or the player has a better hand
             print(Fore.GREEN + "You win!")
             balance += bet * 2
         else:
-            print(Fore.YELLOW + "Push.")
+            print(Fore.YELLOW + "Push.") # the player and dealer have the same hand, so the bet is returned
             balance += bet
         print(Fore.CYAN + f"New Balance: ${balance:.2f}")
 
@@ -439,5 +456,5 @@ def main():
     print(Fore.MAGENTA + Style.BRIGHT + "\nThank you for playing at PY CASINO!")
 
 if __name__ == "__main__":
-    # Run Blackjack menu; allow ESC to exit
+    # Run Blackjack menu as for the other games
     main()
